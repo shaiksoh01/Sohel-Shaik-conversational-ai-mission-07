@@ -7,8 +7,8 @@
 **Galactic Waypoint:** Sector SEC-07-SGR: Sagittarius $A^*$ Supermassive Black Hole ($26,670\text{ ly}$ from Sol)  
 **Course Module:** Week 7 — Test-Time Compute & Reasoning Search Paradigms  
 **IDE & Tools Standard:** Visual Studio Code + Antigravity (`agy`) | Python 3.11+ (Zero External Framework Bloat)  
-**Public Repository:** `[https://github.com/shaiksoh01/Sohel-Shaik-conversational-ai-mission-07](https://github.com/shaiksoh01/Sohel-Shaik-conversational-ai-mission-07)`  
-**Official Course Repository:** `[https://github.com/Unisvet/couse-c-ai](https://github.com/Unisvet/couse-c-ai)`  
+**Public Repository:** `https://github.com/shaiksoh01/Sohel-Shaik-conversational-ai-mission-07`  
+**Official Course Repository:** `https://github.com/Unisvet/couse-c-ai`  
 
 **Mission Authors:**
 * Sumeet Somnath Dighe
@@ -25,7 +25,7 @@ The work is organised into four engineering components:
 1. **Tree-of-Thoughts Solver (`tot_solver.py`):** Breadth-First Beam Search (`ToT-BFS`) and Depth-First Backtracking Search (`ToT-DFS`) under strict expansion budgets.
 2. **MCTS & PUCT Engine (`mcts_protocol.py`):** Four-phase Monte Carlo Tree Search guided by policy priors $P_\theta(a \mid s)$ and the PUCT selection criterion.
 3. **Process Reward Model & Math-Shepherd (`prm_evaluator.py`):** Step-level trajectory reductions, Outcome Reward Model (ORM) false-positive diagnostics, and automated rollout supervision.
-4. **Event Horizon Pruner (`horizon_pruner.py`):** Real-time trajectory severing ($r_{\text{PRM}} < \tau_{\text{horizon}}$) and adversarial reward-hacking detection against sycophantic filler and step-splitting inflation.
+4. **Event Horizon Pruner (`horizon_pruner.py`):** Real-time trajectory severing ($r_{\mathrm{PRM}} < \tau_{\mathrm{horizon}}$) and adversarial reward-hacking detection against sycophantic filler and step-splitting inflation.
 
 The implementation uses native Python 3.11+ with zero external framework dependencies to ensure deterministic reproducibility and bounded test-time compute overhead.
 
@@ -69,7 +69,7 @@ Each node in the search tree is represented by `ThoughtNode`, encapsulating:
 The method `get_trajectory()` walks `parent` pointers back to the root node and reverses the collected sequence to reconstruct the complete derivation chain $z_0 \rightarrow z_1 \rightarrow \dots \rightarrow z_t$.
 
 ### 3.2 Search Algorithms & Compute Guardrails
-1. **Breadth-First Beam Search (`bfs_beam_search`):** Maintains an active frontier of at most $B = \text{beam\_width}$ nodes at each depth $d \in \{1, \dots, \text{max\_depth}\}$. Candidate children whose step evaluation falls below `prune_threshold` are pruned immediately, and surviving nodes are ranked by `cumulative_score`.
+1. **Breadth-First Beam Search (`bfs_beam_search`):** Maintains an active frontier of at most $B = \mathrm{beam\_width}$ nodes at each depth $d \in \{1, \dots, \mathrm{max\_depth}\}$. Candidate children whose step evaluation falls below `prune_threshold` are pruned immediately, and surviving nodes are ranked by `cumulative_score`.
 2. **Depth-First Backtracking Search (`dfs_backtrack_search`):** Sorts valid child branches by `step_score` descending and traverses the highest-scoring branch depth-first up to `max_depth`. Whenever a node scores below `prune_threshold` or reaches a dead-end, recursion chronologically backtracks to the next highest-scoring sibling.
 3. **Expansion Budget (`max_expansions`):** Both search routines increment the expansion counter before expanding a node and terminate immediately once `expansion_count >= max_expansions`.
 
@@ -80,9 +80,9 @@ The method `get_trajectory()` walks `parent` pointers back to the root node and 
 ### 4.1 Exact PUCT Formulation
 During tree traversal, child nodes are selected according to the Predictor + Upper Confidence Bound applied to Trees (PUCT) objective:
 
-$$\text{PUCT}(s, a) = Q(s, a) + c_{\text{puct}} \cdot P_\theta(a \mid s) \frac{\sqrt{N(s)}}{1 + N(s, a)}$$
+$$\mathrm{PUCT}(s, a) = Q(s, a) + c_{\mathrm{puct}} \cdot P_\theta(a \mid s) \frac{\sqrt{N(s)}}{1 + N(s, a)}$$
 
-where $Q(s, a) = \frac{W(s, a)}{N(s, a)}$ if $N(s, a) > 0$ (otherwise $0.0$), $N(s) = \max(1, \text{parent.visit\_count})$, and $c_{\text{puct}}$ is the exploration constant.
+where $Q(s, a) = \frac{W(s, a)}{N(s, a)}$ if $N(s, a) > 0$ (otherwise $0.0$), $N(s) = \max(1, \mathrm{parent.visit\_count})$, and $c_{\mathrm{puct}}$ is the exploration constant.
 
 ### 4.2 Canonical Four-Phase Execution Loop
 1. **Phase 1 (`select_leaf`):** Traverses downward from `root` by greedily choosing the best child maximizing `puct_score` until reaching an unexpanded or terminal leaf node.
@@ -115,7 +115,7 @@ An Outcome Reward Model evaluates only whether the terminal answer matches groun
 ### 5.3 Math-Shepherd Automated Supervision
 To estimate step validity without manual step annotations, `math_shepherd_estimation` evaluates $M$ simulated completions $z_{t \rightarrow T}^{(1)}, \dots, z_{t \rightarrow T}^{(M)}$ from intermediate step $z_t$ against ground-truth answer $y^*$:
 
-$$\hat{y}_{z_t}^{\text{soft}} = \frac{1}{M}\sum_{j=1}^{M}\mathbb{I}\!\left(\text{ans}\!\left(z_{t \rightarrow T}^{(j)}\right) = y^*\right), \qquad \hat{y}_{z_t}^{\text{hard}} = \mathbb{I}\!\left(\hat{y}_{z_t}^{\text{soft}} > 0\right)$$
+$$\hat{y}_{z_t}^{\mathrm{soft}} = \frac{1}{M}\sum_{j=1}^{M}\mathbb{I}\!\left(\mathrm{ans}\!\left(z_{t \rightarrow T}^{(j)}\right) = y^*\right), \qquad \hat{y}_{z_t}^{\mathrm{hard}} = \mathbb{I}\!\left(\hat{y}_{z_t}^{\mathrm{soft}} > 0\right)$$
 
 ---
 
