@@ -7,8 +7,8 @@
 **Galactic Waypoint:** Sector SEC-07-SGR: Sagittarius $A^*$ Supermassive Black Hole ($26,670\text{ ly}$ from Sol)  
 **Course Module:** Week 7 — Test-Time Compute & Reasoning Search Paradigms  
 **IDE & Tools Standard:** Visual Studio Code + Antigravity (`agy`) | Python 3.11+ (Zero External Framework Bloat)  
-**Public Repository:** `https://github.com/shaiksoh01/Sohel-Shaik-conversational-ai-mission-07`  
-**Official Course Repository:** `https://github.com/Unisvet/couse-c-ai`  
+**Public Repository:** `[https://github.com/shaiksoh01/Sohel-Shaik-conversational-ai-mission-07](https://github.com/shaiksoh01/Sohel-Shaik-conversational-ai-mission-07)`  
+**Official Course Repository:** `[https://github.com/Unisvet/couse-c-ai](https://github.com/Unisvet/couse-c-ai)`  
 
 **Mission Authors:**
 * Sumeet Somnath Dighe
@@ -36,7 +36,7 @@ The implementation uses native Python 3.11+ with zero external framework depende
 ### 2.1 Mission Context
 In Sector `SEC-07-SGR`, single-pass autoregressive decoding generates an output sequence $y = (y_1, \dots, y_T)$ conditioned on prompt $x$ via:
 
-$$P_\theta(y \mid x) = \prod_{t=1}^{T} P_\theta(y_t \mid x, y_{<t})$$
+$$P_\theta(y \mid x) = \prod_{t=1}^{T} P_\theta(y_t \mid x, y_{\lt t})$$
 
 Because standard autoregressive decoding commits irrevocably to each emitted token without lookahead or backtracking, any intermediate step error probability $\epsilon > 0$ causes the cumulative probability of committing at least one fatal mistake over $T$ steps to compound exponentially:
 
