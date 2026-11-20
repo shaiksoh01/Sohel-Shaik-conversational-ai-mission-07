@@ -36,7 +36,7 @@ The implementation uses native Python 3.11+ with zero external framework depende
 ### 2.1 Mission Context
 In Sector `SEC-07-SGR`, single-pass autoregressive decoding generates an output sequence $y = (y_1, \dots, y_T)$ conditioned on prompt $x$ via:
 
-$$P_\theta(y \mid x) = \prod_{t=1}^{T} P_\theta(y_t \mid x, y_{<t})$$
+$$P_\theta(y \mid x) = \prod_{t=1}^{T} P_\theta(y_t \mid x, y_{\lt t})$$
 
 Because standard autoregressive decoding commits irrevocably to each emitted token without lookahead or backtracking, any intermediate step error probability $\epsilon > 0$ causes the cumulative probability of committing at least one fatal mistake over $T$ steps to compound exponentially:
 
@@ -83,80 +83,3 @@ During tree traversal, child nodes are selected according to the Predictor + Upp
 $$\text{PUCT}(s, a) = Q(s, a) + c_{\text{puct}} \cdot P_\theta(a \mid s) \frac{\sqrt{N(s)}}{1 + N(s, a)}$$
 
 where $Q(s, a) = \frac{W(s, a)}{N(s, a)}$ if $N(s, a) > 0$ (otherwise $0.0$), $N(s) = \max(1, \text{parent.visit\_count})$, and $c_{\text{puct}}$ is the exploration constant.
-
-### 4.2 Canonical Four-Phase Execution Loop
-1. **Phase 1 (`select_leaf`):** Traverses downward from `root` by greedily choosing the best child maximizing `puct_score` until reaching an unexpanded or terminal leaf node.
-2. **Phase 2 (`expand`):** Instantiates child `MCTSNode` instances for each `(thought_state, prior_prob)` candidate pair.
-3. **Phase 3 (`simulate_rollout`):** Evaluates the newly expanded leaf via a trajectory rollout or PRM value estimate bounded within $[0, 1]$.
-4. **Phase 4 (`backpropagate`):** Traverses upward from the leaf to `root`, incrementing `visit_count += 1` and accumulating `value_sum += reward` at every ancestor.
-
----
-
-## 5. Part III: Process Reward Model & Math-Shepherd (`prm_evaluator.py`)
-
-### 5.1 Trajectory Step Reductions
-Given intermediate step scores $[r_1, r_2, \dots, r_T] \in (0, 1]^T$, `ProcessRewardEvaluator` implements three reduction operators:
-* **Minimum Reduction (`min`):** $\min_{t=1}^{T} r_t$ — weakest-link detector.
-* **Product Reduction (`prod`):** $\prod_{t=1}^{T} r_t$ — joint step-wise validity probability.
-* **Geometric Mean (`geometric_mean`):** $\left(\prod_{t=1}^{T} r_t\right)^{1/T}$ — length-normalized trajectory quality.
-
-### 5.2 ORM vs. PRM False-Positive Benchmark
-An Outcome Reward Model evaluates only whether the terminal answer matches ground truth $y^*$. In our benchmark test (`run_orm_vs_prm_benchmark`), a flawed two-step derivation commits two canceling algebraic sign errors:
-* **Step 1:** $(-6) \times (-7) = -42$ *(Sign error #1; step score $r_1 = 0.05$)*
-* **Step 2:** $-(-42) = 42$ *(Sign error #2 canceling the first; step score $r_2 = 0.10$)*
-
-| Evaluator / Metric | Score | Diagnostic Interpretation |
-| :--- | :---: | :--- |
-| Outcome Reward Model (`ORM`) | `1.0000` | False positive: terminal answer matches $y^* = 42$. |
-| PRM Minimum Reduction (`min`) | `0.0500` | Flags invalid intermediate sign error at Step 1. |
-| PRM Product Reduction (`prod`) | `0.0050` | Reflects low joint validity across both flawed steps. |
-| PRM Geometric Mean (`geometric_mean`) | `0.0707` | Length-normalized score rejects corrupted proof. |
-
-### 5.3 Math-Shepherd Automated Supervision
-To estimate step validity without manual step annotations, `math_shepherd_estimation` evaluates $M$ simulated completions $z_{t \rightarrow T}^{(1)}, \dots, z_{t \rightarrow T}^{(M)}$ from intermediate step $z_t$ against ground-truth answer $y^*$:
-
-$$\hat{y}_{z_t}^{\text{soft}} = \frac{1}{M}\sum_{j=1}^{M}\mathbb{I}\!\left(\text{ans}\!\left(z_{t \rightarrow T}^{(j)}\right) = y^*\right), \qquad \hat{y}_{z_t}^{\text{hard}} = \mathbb{I}\!\left(\hat{y}_{z_t}^{\text{soft}} > 0\right)$$
-
----
-
-## 6. Part IV: Event Horizon Pruner & Reward-Hacking Defense (`horizon_pruner.py`)
-
-### 6.1 Adversarial Reward-Hacking Detector
-`EventHorizonPruner.check_reward_hacking` inspects each candidate step against two adversarial manipulation vectors:
-* **Sycophantic Filler Injection:** Detects vacuous self-congratulatory phrases (e.g., *"Let us carefully verify this 100% rigorous step..."*, *"Obviously, by trivial inspection..."*) designed to inflate naive PRM logits without advancing mathematical state.
-* **Step-Splitting Inflation:** Strips non-symbolic filler to normalize algebraic tokens and detects repeated equations or vacuous micro-steps injected to dilute a low-scoring error under mean aggregation.
-
-### 6.2 Horizon Trajectory Pruning Protocol
-`EventHorizonPruner.prune_trajectory` iterates sequentially through `(steps, step_scores)`:
-1. Whenever `check_reward_hacking(step)` triggers, the raw step score is penalized multiplicatively by `self.hacking_penalty_factor` (`0.25`).
-2. If the adjusted step score falls below `self.tau_horizon` (`0.50`), the trajectory is immediately severed at that index and a structured `TelemetryAlert` is recorded.
-
----
-
-## 7. Squad Review and Sign-Off
-
-| Mission Author | Contribution Record |
-| :--- | :--- |
-| **Sumeet Somnath Dighe** | Bridge crew member and mission author. |
-| **Sohel Shaik** | Bridge crew member and mission author. |
-| **Amulya Gaddam** | Bridge crew member and mission author. |
-| **Atharv Santosh Jaiswal** | Bridge crew member and mission author. |
-
-**Technical Responsibility Areas:**
-1. **Systems Architect (Lead Engineer):** `tot_solver.py` — ToT-BFS, ToT-DFS, and expansion budget pruning.
-2. **Communications and Protocol Officer:** `mcts_protocol.py` — Exact PUCT scoring and four-phase MCTS engine.
-3. **Data and Payload Specialist:** `prm_evaluator.py` — Trajectory step reductions, ORM false-positive benchmark, and Math-Shepherd supervision.
-4. **Security and Ethics Sentinel:** `horizon_pruner.py` — Reward-hacking audit and Event Horizon trajectory pruning.
-
----
-
-## 8. Final Submission Checklist
-
-```text
-mission-07/
-|-- tot_solver.py
-|-- mcts_protocol.py
-|-- prm_evaluator.py
-|-- horizon_pruner.py
-|-- mission-07-doc.md
-`-- mission-07-doc.pdf
